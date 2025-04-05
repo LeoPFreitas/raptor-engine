@@ -6,11 +6,11 @@ plugins {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-configuration-processor'
-    implementation 'org.projectlombok:lombok'
-    implementation 'org.springframework.boot:spring-boot-starter'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation libs.spring.boot.configuration.processor
+    implementation libs.lombok
+    implementation libs.spring.boot.starter
+    testImplementation libs.spring.boot.starter.test
+    developmentOnly libs.spring.boot.devtools
 
     implementation project(':raptor-raft')
 }
