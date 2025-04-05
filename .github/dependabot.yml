@@ -1,14 +1,14 @@
 version: 2
 updates:
-  - package-ecosystem: "gradle" # Specify Gradle as the package ecosystem
-    directory: "/" # Root directory of your project, contains `settings.gradle`
+  - package-ecosystem: "gradle"
+    directory: "/"
     schedule:
-      interval: "weekly" # Run updates weekly
-  - package-ecosystem: "gradle" # Gradle ecosystem for version catalogs
-    directory: "/gradle" # Location of `libs.versions.toml`
+      interval: "weekly"
+  - package-ecosystem: "gradle"
+    directory: "/gradle"
     schedule:
-      interval: "weekly" # Run updates weekly
-  - package-ecosystem: "github-actions" # Optional: Update GitHub Actions workflows
-    directory: "/" # Location of GitHub Actions workflows (if any in `.github/workflows`)
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
