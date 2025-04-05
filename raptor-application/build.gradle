@@ -9,10 +9,13 @@ dependencies {
     implementation libs.spring.boot.configuration.processor
     implementation libs.lombok
     implementation libs.spring.boot.starter
+    implementation project(':raptor-raft')
+
     testImplementation libs.spring.boot.starter.test
+
     developmentOnly libs.spring.boot.devtools
 
-    implementation project(':raptor-raft')
+    testRuntimeOnly libs.junit.platform.launcher
 }
 
 tasks.named('test') {

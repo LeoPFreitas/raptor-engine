@@ -7,6 +7,7 @@ junit-platform-launcher = { module = "org.springframework.boot:junit-platform-la
 spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
 lombok = { module = "org.projectlombok:lombok" }
 spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools" }
+ratis-metrics-default = { module = "org.apache.ratis:ratis-metrics-default", version.ref = "ratis" }
 
 [versions]
 ratis = "3.1.3"
