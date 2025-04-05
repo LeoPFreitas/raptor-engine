@@ -5,4 +5,5 @@ plugins {
 dependencies {
     implementation libs.ratis.grpc
     implementation libs.ratis.server
+    implementation libs.ratis.metrics.default
 }
