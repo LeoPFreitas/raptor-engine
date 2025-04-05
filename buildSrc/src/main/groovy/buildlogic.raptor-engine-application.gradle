@@ -1,0 +1,8 @@
+plugins {
+    id 'buildlogic.raptor-engine-conventions'
+
+    id 'org.springframework.boot'
+}
+
+dependencies {
+}
