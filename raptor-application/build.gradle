@@ -7,15 +7,18 @@ plugins {
 
 dependencies {
     implementation libs.spring.boot.configuration.processor
-    implementation libs.lombok
     implementation libs.spring.boot.starter
-    implementation project(':raptor-raft')
-
-    testImplementation libs.spring.boot.starter.test
 
     developmentOnly libs.spring.boot.devtools
 
+    testImplementation libs.spring.boot.starter.test
     testRuntimeOnly libs.junit.platform.launcher
+
+    implementation libs.lombok
+    annotationProcessor libs.lombok
+    testAnnotationProcessor libs.lombok
+
+    implementation project(':raptor-raft')
 }
 
 tasks.named('test') {
