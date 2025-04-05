@@ -1,9 +1,6 @@
 plugins {
     id 'java'
     id 'java-library'
-
-    id 'io.spring.dependency-management'
-
 }
 
 group = 'co.raptor.engine'
@@ -17,15 +14,4 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
-}
-
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
 }

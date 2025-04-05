@@ -2,3 +2,7 @@ plugins {
     id 'buildlogic.raptor-engine-conventions'
 }
 
+dependencies {
+    implementation libs.ratis.grpc
+    implementation libs.ratis.server
+}
