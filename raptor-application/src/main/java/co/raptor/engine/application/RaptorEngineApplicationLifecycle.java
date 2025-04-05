@@ -1,10 +1,18 @@
 package co.raptor.engine.application;
 
-import co.raptor.engine.raft.RaptorEngineServer;
+import co.raptor.engine.application.config.RaftServerProperties;
+import co.raptor.engine.raft.ClusterConfig;
+import co.raptor.engine.raft.RaftPeerConfig;
+import co.raptor.engine.raft.RaptorEngineServerFactory;
+import co.raptor.engine.raft.RaptorNetUtils;
+import co.raptor.engine.raft.internal.RaftServerNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.UUID;
 
 
 @Component
@@ -12,11 +20,13 @@ public class RaptorEngineApplicationLifecycle implements SmartLifecycle {
     private static final Logger logger = LoggerFactory.getLogger(RaptorEngineApplicationLifecycle.class);
 
     private final RaptorEngineInitializationService initializationService;
-    private volatile boolean running = false;
-    private RaptorEngineServer raptorEngineServer;
+    private final RaftServerProperties raftServerProperties;
 
-    public RaptorEngineApplicationLifecycle(RaptorEngineInitializationService initializationService) {
+    private volatile boolean running = false;
+
+    public RaptorEngineApplicationLifecycle(RaptorEngineInitializationService initializationService, RaftServerProperties raftServerProperties) {
         this.initializationService = initializationService;
+        this.raftServerProperties = raftServerProperties;
     }
 
     @Override
@@ -29,14 +39,15 @@ public class RaptorEngineApplicationLifecycle implements SmartLifecycle {
 
             logger.info("==== Initialization Complete ====");
 
+            RaftPeerConfig node1 = new RaftPeerConfig(raftServerProperties.getId(), RaptorNetUtils.createSocketAddress(raftServerProperties.getHost()));
 
-            raptorEngineServer = new RaptorEngineServer();
+            ClusterConfig clusterConfig = new ClusterConfig(UUID.randomUUID(), List.of(node1));
+
+            RaftServerNode raptorEngineServer = RaptorEngineServerFactory.createNode(node1, clusterConfig);
             raptorEngineServer.start();
 
             logger.info("RaptorEngineServer started successfully.");
 
-
-            // Mark this lifecycle component as running
             this.running = true;
 
         } catch (Exception e) {
@@ -45,14 +56,11 @@ public class RaptorEngineApplicationLifecycle implements SmartLifecycle {
         }
     }
 
+    // TODO: Implement proper cleanup and ratis server stop
     @Override
     public void stop() {
         try {
-            // Stop the RaptorEngineServer gracefully here
-            if (raptorEngineServer != null) {
-                logger.info("Stopping RaptorEngineServer...");
-                raptorEngineServer.close(); // Ensure RaptorEngineServer has a stop method for clean shutdown
-            }
+            logger.info("==== Stopping RaptorEngineServer ====");
 
             this.running = false;
 
