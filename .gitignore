@@ -93,3 +93,6 @@ terraform.rc
 *.iml
 out
 gen
+
+### Vagrant template
+.vagrant/
