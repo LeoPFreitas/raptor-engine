@@ -12,5 +12,5 @@ public class RaftServerProperties {
 
     private String host;
 
-    private String id;
+    private String peerId;
 }
