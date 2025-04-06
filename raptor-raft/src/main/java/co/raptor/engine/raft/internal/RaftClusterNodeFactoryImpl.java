@@ -50,19 +50,12 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
      */
     @Override
     public RaftClusterNode createStandaloneNode(RaftPeerConfig raftPeerConfig) throws IOException {
-
         RaftProperties raftProperties = new RaftProperties();
-
         RaftPeerId raftPeerId = RaftPeerId.valueOf(raftPeerConfig.peerID());
 
-        RaftServer server = RaftServer.newBuilder()
-                .setGroup(RaftGroup.emptyGroup())
-                .setProperties(raftProperties)
-                .setStateMachine(new BaseStateMachine())
-                .setOption(RaftStorage.StartupOption.RECOVER)
-                .setServerId(raftPeerId)
-                .build();
+        RaftGroup raftGroup = RaftGroup.emptyGroup();
 
+        RaftServer server = buildRaftServer(raftProperties, raftPeerId, raftGroup);
 
         return new RaftClusterNodeImpl(server);
     }
@@ -92,22 +85,16 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
      * @return an instance of {@link RaftClusterNode} representing the first member of the new Raft group.
      * @throws IOException if an error occurs during the creation or initialization of the Raft server.
      */
+    @Override
     public RaftClusterNode createNode(UUID groupUUID, RaftPeerConfig joiningPeerConfig) throws IOException {
         RaftProperties raftProperties = new RaftProperties();
-
         RaftGroupId raftGroupId = RaftGroupId.valueOf(groupUUID);
         RaftPeer joiningPeer = RaftPeerMapper.toRatisPeer(joiningPeerConfig);
 
-
         RaftGroup raftGroup = RaftGroup.valueOf(raftGroupId, joiningPeer);
         RaftPeerId raftPeerId = RaftPeerId.valueOf(joiningPeerConfig.peerID());
-        RaftServer server = RaftServer.newBuilder()
-                .setGroup(raftGroup)
-                .setProperties(raftProperties)
-                .setStateMachine(new BaseStateMachine())
-                .setOption(RaftStorage.StartupOption.RECOVER)
-                .setServerId(raftPeerId)
-                .build();
+
+        RaftServer server = buildRaftServer(raftProperties, raftPeerId, raftGroup);
 
         return new RaftClusterNodeImpl(server);
     }
@@ -161,26 +148,39 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
         }
 
         RaftProperties raftProperties = new RaftProperties();
-
         RaftGroupId raftGroupId = RaftGroupId.valueOf(groupUUID);
 
         Set<RaftPeer> ratisPeers = existingPeersConfig.stream()
                 .map(RaftPeerMapper::toRatisPeer)
                 .collect(Collectors.toSet());
-
         RaftPeer joiningPeer = RaftPeerMapper.toRatisPeer(joiningPeerConfig);
         ratisPeers.add(joiningPeer);
 
         RaftGroup raftGroup = RaftGroup.valueOf(raftGroupId, ratisPeers);
         RaftPeerId raftPeerId = RaftPeerId.valueOf(joiningPeerConfig.peerID());
-        RaftServer server = RaftServer.newBuilder()
+
+        RaftServer server = buildRaftServer(raftProperties, raftPeerId, raftGroup);
+
+        return new RaftClusterNodeImpl(server);
+    }
+
+    /**
+     * Builds a Raft server instance with the provided properties, group, and server ID.
+     *
+     * @param raftProperties the properties for the Raft server
+     * @param raftPeerId     the unique identifier for the server
+     * @param raftGroup      the Raft group configuration
+     * @return the constructed RaftServer instance
+     * @throws IOException if an error occurs during server creation
+     */
+    private RaftServer buildRaftServer(RaftProperties raftProperties, RaftPeerId raftPeerId, RaftGroup raftGroup) throws IOException {
+        return RaftServer.newBuilder()
                 .setGroup(raftGroup)
                 .setProperties(raftProperties)
                 .setStateMachine(new BaseStateMachine())
                 .setOption(RaftStorage.StartupOption.RECOVER)
                 .setServerId(raftPeerId)
                 .build();
-
-        return new RaftClusterNodeImpl(server);
     }
+
 }
