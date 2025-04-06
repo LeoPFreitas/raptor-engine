@@ -6,4 +6,7 @@ dependencies {
     implementation libs.ratis.grpc
     implementation libs.ratis.server
     implementation libs.ratis.metrics.default
+
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
 }

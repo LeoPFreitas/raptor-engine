@@ -20,7 +20,3 @@ dependencies {
 
     implementation project(':raptor-raft')
 }
-
-tasks.named('test') {
-    useJUnitPlatform()
-}

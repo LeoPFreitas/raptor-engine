@@ -15,3 +15,13 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
 }
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+
+    maxHeapSize = '1G'
+
+    testLogging {
+        events "passed"
+    }
+}
