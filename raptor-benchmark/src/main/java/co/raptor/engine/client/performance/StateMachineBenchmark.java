@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Threads(32)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class StateMachineBenchmark {
+    public static final String ADDRESS = "localhost:9091";
+    public static final String SERVER_ID = "n0";
+    public static final String RAFT_GROUP_UUID = "2112095a-27fc-4732-9b57-797a3be0f728";
 
     private RaftClient client;
 
@@ -27,12 +30,12 @@ public class StateMachineBenchmark {
     public void setup() throws IOException {
         // Create a Raft client as done in the provided example
         RaftPeer peer = RaftPeer.newBuilder()
-                .setId("n0")
-                .setAddress("localhost:9091")
+                .setId(SERVER_ID)
+                .setAddress(ADDRESS)
                 .build();
 
         // Assign a predefined group ID
-        RaftGroupId raftGroupId = RaftGroupId.valueOf(UUID.fromString("2112095a-27fc-4732-9b57-797a3be0f728"));
+        RaftGroupId raftGroupId = RaftGroupId.valueOf(UUID.fromString(RAFT_GROUP_UUID));
         RaftGroup raftGroup = RaftGroup.valueOf(raftGroupId, Collections.singletonList(peer));
 
         // Initialize the raft client for benchmarking

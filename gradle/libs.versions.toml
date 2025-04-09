@@ -10,7 +10,10 @@ lombok = { module = "org.projectlombok:lombok" }
 spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools" }
 ratis-metrics-default = { module = "org.apache.ratis:ratis-metrics-default", version.ref = "ratis" }
 ratis-client = { module = "org.apache.ratis:ratis-client", version.ref = "ratis" }
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
 
 [versions]
 ratis = "3.1.3"
 junit-jupiter = "5.12.1"
+jmh = "1.37"
