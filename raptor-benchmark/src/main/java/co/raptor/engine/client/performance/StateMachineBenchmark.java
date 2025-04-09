@@ -2,6 +2,7 @@ package co.raptor.engine.client.performance;
 
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.RaftProperties;
+import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.protocol.*;
 import org.openjdk.jmh.annotations.*;
 
@@ -9,7 +10,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 @BenchmarkMode({Mode.Throughput, Mode.AverageTime})
@@ -21,10 +21,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class StateMachineBenchmark {
     public static final String ADDRESS = "localhost:9091";
+    public static final Integer PORT = 9091;
     public static final String SERVER_ID = "n0";
     public static final String RAFT_GROUP_UUID = "2112095a-27fc-4732-9b57-797a3be0f728";
 
     private RaftClient client;
+
+    private final ThreadLocal<Integer> commandCounter = ThreadLocal.withInitial(() -> 0);
 
     @Setup
     public void setup() throws IOException {
@@ -38,21 +41,15 @@ public class StateMachineBenchmark {
         RaftGroupId raftGroupId = RaftGroupId.valueOf(UUID.fromString(RAFT_GROUP_UUID));
         RaftGroup raftGroup = RaftGroup.valueOf(raftGroupId, Collections.singletonList(peer));
 
+        RaftProperties properties = new RaftProperties();
+        GrpcConfigKeys.Server.setPort(properties, PORT);
+
         // Initialize the raft client for benchmarking
         client = RaftClient.newBuilder()
                 .setRaftGroup(raftGroup)
-                .setProperties(new RaftProperties())
+                .setProperties(properties)
                 .build();
     }
-
-    @TearDown
-    public void tearDown() throws IOException {
-        if (client != null) {
-            client.close();
-        }
-    }
-
-    AtomicInteger pendingFutures = new AtomicInteger();
 
     @Benchmark
     public void testSyncSendMessage() throws Exception {
@@ -74,5 +71,55 @@ public class StateMachineBenchmark {
         }
     }
 
+    @TearDown
+    public void tearDown() {
+        try {
+            if (client != null) {
+                client.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to close Raft client: " + e.getMessage());
+        }
+    }
 
+    @Benchmark
+    public void benchmarkCreditTransaction() throws Exception {
+        String creditCommand = generateCommand("CREDIT", 100.0);
+        executeCommand(creditCommand);
+    }
+
+    @Benchmark
+    public void benchmarkDebitTransaction() throws Exception {
+        String debitCommand = generateCommand("DEBIT", 50.0);
+        executeCommand(debitCommand);
+    }
+
+    @Benchmark
+    public void benchmarkGetBalanceOperation() throws Exception {
+        executeCommand("GET_BALANCE");
+    }
+
+    // Helper method to generate dynamic credit/debit commands
+    private String generateCommand(String operation, double amount) {
+        int counter = commandCounter.get();
+        commandCounter.set(counter + 1); // Increment the thread-local counter
+        return operation + ":" + amount + ":" + counter;
+    }
+
+    // Generic method for executing a command
+    private void executeCommand(String command) throws Exception {
+        Message message = Message.valueOf(command);
+
+        try {
+            // Perform synchronous send operation
+            RaftClientReply reply = client.io().send(message);
+
+            if (!reply.isSuccess()) {
+                throw new RuntimeException("Command failed: " + command + ", Error: " + reply.getException());
+            }
+        } catch (Exception e) {
+            System.err.println("Error executing command: " + command + ", Details: " + e.getMessage());
+            throw e;
+        }
+    }
 }

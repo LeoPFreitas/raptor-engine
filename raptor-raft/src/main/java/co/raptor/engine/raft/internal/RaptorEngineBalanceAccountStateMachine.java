@@ -56,13 +56,13 @@ public class RaptorEngineBalanceAccountStateMachine extends BaseStateMachine {
             switch (RaptorEngineCommand.valueOf(commandType)) {
                 case CREDIT -> {
                     double newBalance = balance.addAndGet(amount);
-                    logger.info("Credited amount. New Balance: {}", newBalance);
+                    logger.debug("Credited amount. New Balance: {}", newBalance);
                     result.complete(Message.valueOf(ByteString.copyFromUtf8("CREDIT applied: New Balance=" + newBalance)));
                 }
                 case DEBIT -> {
                     if (balance.get() >= amount) {
                         double updatedBalance = balance.addAndGet(-amount);
-                        logger.info("Debited amount. New Balance: {}", updatedBalance);
+                        logger.debug("Debited amount. New Balance: {}", updatedBalance);
                         result.complete(Message.valueOf(ByteString.copyFromUtf8("DEBIT applied: New Balance=" + updatedBalance)));
                     } else {
                         logger.error("Insufficient funds: balance={}, debit amount={}", balance.get(), amount);
@@ -70,7 +70,7 @@ public class RaptorEngineBalanceAccountStateMachine extends BaseStateMachine {
                     }
                 }
                 case GET_BALANCE -> {
-                    logger.info("Getting balance: {}", balance.get());
+                    logger.debug("Getting balance: {}", balance.get());
                     result.complete(Message.valueOf(ByteString.copyFromUtf8("Current Balance=" + balance.get())));
                 }
                 default -> {
