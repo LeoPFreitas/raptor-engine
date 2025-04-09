@@ -184,7 +184,7 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
         return RaftServer.newBuilder()
                 .setGroup(raftGroup)
                 .setProperties(raftProperties)
-                .setStateMachine(new RaptorEngineBalanceAccountStateMachine())
+                .setStateMachine(new RaptorEngineBalanceAccountStateMachineV2())
                 .setOption(RaftStorage.StartupOption.RECOVER)
                 .setServerId(raftPeerId)
                 .build();
