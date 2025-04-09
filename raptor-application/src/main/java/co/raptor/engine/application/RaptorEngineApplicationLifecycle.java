@@ -33,12 +33,11 @@ public class RaptorEngineApplicationLifecycle implements SmartLifecycle {
         RaftClusterNodeFactoryImpl raftClusterNodeFactory = new RaftClusterNodeFactoryImpl();
 
         String peerID = raftServerProperties.getPeerId();
-        InetSocketAddress socketAddress = RaptorNetUtils.createSocketAddress(raftServerProperties.getHost());
+        InetSocketAddress socketAddress = RaptorNetUtils.createSocketAddress(raftServerProperties.getHost(), raftServerProperties.getPort());
         RaftPeerConfig raftPeerConfig = new RaftPeerConfig(peerID, socketAddress);
 
         try {
             standaloneNode = raftClusterNodeFactory.createNode(raftServerProperties.getGroupId(), raftPeerConfig);
-//            standaloneNode = raftClusterNodeFactory.createStandaloneNode(raftPeerConfig);
         } catch (IOException e) {
             logger.error("Error creating Raft server node.", e);
             throw new RuntimeException(e);

@@ -13,7 +13,7 @@ public class RaftPeerMapper {
      */
     public static RaftPeer toRatisPeer(RaftPeerConfig peerConfig) {
         return RaftPeer.newBuilder()
-                .setId(peerConfig.peerID()) // Peer ID
+                .setId(peerConfig.peerID())
                 .setAddress(peerConfig.inetSocketAddress())
                 .build();
     }

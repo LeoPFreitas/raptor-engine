@@ -4,6 +4,7 @@ import co.raptor.engine.raft.RaftPeerConfig;
 import co.raptor.engine.raft.api.RaftClusterNode;
 import co.raptor.engine.raft.api.RaftClusterNodeFactory;
 import org.apache.ratis.conf.RaftProperties;
+import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.protocol.RaftGroup;
 import org.apache.ratis.protocol.RaftGroupId;
 import org.apache.ratis.protocol.RaftPeer;
@@ -51,6 +52,8 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
     @Override
     public RaftClusterNode createStandaloneNode(RaftPeerConfig raftPeerConfig) throws IOException {
         RaftProperties raftProperties = new RaftProperties();
+        GrpcConfigKeys.Server.setPort(raftProperties, raftPeerConfig.inetSocketAddress().getPort());
+
         RaftPeerId raftPeerId = RaftPeerId.valueOf(raftPeerConfig.peerID());
 
         RaftGroup raftGroup = RaftGroup.emptyGroup();
@@ -90,6 +93,8 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
         RaftProperties raftProperties = new RaftProperties();
         RaftGroupId raftGroupId = RaftGroupId.valueOf(groupUUID);
         RaftPeer joiningPeer = RaftPeerMapper.toRatisPeer(joiningPeerConfig);
+
+        GrpcConfigKeys.Server.setPort(raftProperties, joiningPeerConfig.inetSocketAddress().getPort());
 
         RaftGroup raftGroup = RaftGroup.valueOf(raftGroupId, joiningPeer);
         RaftPeerId raftPeerId = RaftPeerId.valueOf(joiningPeerConfig.peerID());
@@ -159,6 +164,8 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
         RaftGroup raftGroup = RaftGroup.valueOf(raftGroupId, ratisPeers);
         RaftPeerId raftPeerId = RaftPeerId.valueOf(joiningPeerConfig.peerID());
 
+        GrpcConfigKeys.Server.setPort(raftProperties, joiningPeerConfig.inetSocketAddress().getPort());
+
         RaftServer server = buildRaftServer(raftProperties, raftPeerId, raftGroup);
 
         return new RaftClusterNodeImpl(server);
@@ -177,7 +184,7 @@ public class RaftClusterNodeFactoryImpl implements RaftClusterNodeFactory {
         return RaftServer.newBuilder()
                 .setGroup(raftGroup)
                 .setProperties(raftProperties)
-                .setStateMachine(new BaseStateMachine())
+                .setStateMachine(new RaptorEngineBalanceAccountStateMachine())
                 .setOption(RaftStorage.StartupOption.RECOVER)
                 .setServerId(raftPeerId)
                 .build();

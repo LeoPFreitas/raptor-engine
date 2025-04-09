@@ -17,4 +17,6 @@ public class RaftServerProperties {
     private String peerId;
 
     private UUID groupId;
+
+    private Integer port;
 }

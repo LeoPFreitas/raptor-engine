@@ -6,3 +6,4 @@ rootProject.name = 'raptor-engine'
 
 include 'raptor-raft'
 include 'raptor-application'
+include 'raptor-client'

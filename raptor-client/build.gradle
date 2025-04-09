@@ -1,0 +1,34 @@
+plugins {
+    id 'buildlogic.raptor-engine-conventions'
+
+    id "me.champeau.jmh" version "0.7.2"
+}
+
+dependencies {
+    implementation libs.ratis.grpc
+    implementation libs.ratis.server
+    implementation libs.ratis.metrics.default
+    implementation libs.ratis.client
+
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+
+    implementation 'org.openjdk.jmh:jmh-core:1.37'
+    annotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+
+}
+
+// Custom Gradle task to run only the StateMachineBenchmark class
+tasks.register("runStateMachineBenchmark", JavaExec) {
+    group = 'Benchmark'
+    description = 'Run only the StateMachineBenchmark JMH tests.'
+
+    // Set main class for JMH
+    mainClass.set("org.openjdk.jmh.Main")
+
+    // Use JMH runtime classpath
+    classpath = sourceSets.jmh.runtimeClasspath
+
+    // Pass arguments to run only a specific benchmark
+    args "co.raptor.engine.client.performance.StateMachineBenchmark"
+}
