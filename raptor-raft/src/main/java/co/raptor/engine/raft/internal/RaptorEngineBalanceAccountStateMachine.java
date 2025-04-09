@@ -19,47 +19,70 @@ public class RaptorEngineBalanceAccountStateMachine extends BaseStateMachine {
 
     private final AtomicDouble balance = new AtomicDouble(0.0);
 
-
     @Override
     public CompletableFuture<Message> applyTransaction(TransactionContext trx) {
         RaftProtos.LogEntryProto entry = trx.getLogEntry();
+        // Extract log data
         ByteString logData = entry.getStateMachineLogEntry().getLogData();
-        String command = logData.toStringUtf8();
-        String[] parts = command.split(":"); // Example: CREDIT,100
-        RaptorEngineCommand cmd = RaptorEngineCommand.valueOf(parts[0]);
-        double amount = parts.length > 1 ? Double.parseDouble(parts[1]) : 0.0;
-
-        CompletableFuture<Message> result = new CompletableFuture<>();
-        switch (cmd) {
-            case CREDIT:
-                balance.addAndGet(amount);
-                result.complete(() -> ByteString.fromHex("CREDIT applied"));
-                break;
-
-            case DEBIT:
-                boolean success = balance.accumulateAndGet(amount, (current, delta) -> {
-                    if (current >= delta) {
-                        return current - delta;
-                    } else {
-                        logger.error("Insufficient funds: current={}, delta={}", current, delta);
-                        return current;
-                    }
-                }) >= 0;
-
-                if (success) {
-                    result.complete(() -> ByteString.fromHex("DEBIT applied successfully"));
-                } else {
-                    result.completeExceptionally(new IllegalStateException("Insufficient funds"));
-                }
-                break;
-
-            case GET_BALANCE:
-                result.complete(() -> ByteString.fromHex("Current Balance: " + balance.get()));
-                break;
-
-            default:
-                result.completeExceptionally(new UnsupportedOperationException("Invalid Command"));
+        String command;
+        try {
+            command = logData.toStringUtf8();
+        } catch (Exception e) {
+            logger.error("Failed to parse log data from transaction", e);
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid log data format"));
         }
+
+        // Split command and handle parsing errors
+        String[] parts = command.split(":");
+        if (parts.length < 1) {
+            logger.error("Invalid command format: {}", command);
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid command format"));
+        }
+
+        String commandType = parts[0];
+        double amount = 0.0;
+        if (parts.length > 1) {
+            try {
+                amount = Double.parseDouble(parts[1]);
+            } catch (NumberFormatException e) {
+                logger.error("Invalid amount format in command: {}", command, e);
+                return CompletableFuture.failedFuture(new IllegalArgumentException("Invalid amount format"));
+            }
+        }
+
+        // Handle commands
+        CompletableFuture<Message> result = new CompletableFuture<>();
+        try {
+            switch (RaptorEngineCommand.valueOf(commandType)) {
+                case CREDIT -> {
+                    double newBalance = balance.addAndGet(amount);
+                    logger.info("Credited amount. New Balance: {}", newBalance);
+                    result.complete(Message.valueOf(ByteString.copyFromUtf8("CREDIT applied: New Balance=" + newBalance)));
+                }
+                case DEBIT -> {
+                    if (balance.get() >= amount) {
+                        double updatedBalance = balance.addAndGet(-amount);
+                        logger.info("Debited amount. New Balance: {}", updatedBalance);
+                        result.complete(Message.valueOf(ByteString.copyFromUtf8("DEBIT applied: New Balance=" + updatedBalance)));
+                    } else {
+                        logger.error("Insufficient funds: balance={}, debit amount={}", balance.get(), amount);
+                        result.completeExceptionally(new IllegalStateException("Insufficient funds"));
+                    }
+                }
+                case GET_BALANCE -> {
+                    logger.info("Getting balance: {}", balance.get());
+                    result.complete(Message.valueOf(ByteString.copyFromUtf8("Current Balance=" + balance.get())));
+                }
+                default -> {
+                    logger.error("Unsupported command type: {}", commandType);
+                    result.completeExceptionally(new UnsupportedOperationException("Invalid Command"));
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error processing command: {}", command, e);
+            result.completeExceptionally(e);
+        }
+
         return result;
     }
 

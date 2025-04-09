@@ -2,23 +2,21 @@ package co.raptor.engine.client.performance;
 
 import org.apache.ratis.client.RaftClient;
 import org.apache.ratis.conf.RaftProperties;
+import org.apache.ratis.grpc.GrpcConfigKeys;
 import org.apache.ratis.protocol.*;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class Main {
 
-    // Constants for configurations
     private static final String ADDRESS = "localhost:9091";
     private static final String SERVER_ID = "n0";
-    private static final String RAFT_GROUP_UUID = "2112095a-27fc-4732-" +
-            "9b57-797a3be0f728";
+    private static final String RAFT_GROUP_UUID = "2112095a-27fc-4732-9b57-797a3be0f728";
 
     public static void main(String[] args) {
-        // Initialize Raft peer group and properties
+        // Define the Raft group and peer
         RaftPeer peer = RaftPeer.newBuilder()
                 .setId(SERVER_ID)
                 .setAddress(ADDRESS)
@@ -28,9 +26,12 @@ public class Main {
         RaftGroup raftGroup = RaftGroup.valueOf(raftGroupId, Collections.singletonList(peer));
 
         // Create the Raft client
+        RaftProperties properties = new RaftProperties();
+        GrpcConfigKeys.Server.setPort(properties, 9091);
+
         try (RaftClient client = RaftClient.newBuilder()
                 .setRaftGroup(raftGroup)
-                .setProperties(new RaftProperties())
+                .setProperties(properties)
                 .build()) {
 
             // Print leader information
@@ -38,38 +39,45 @@ public class Main {
             RaftPeerId leaderId = client.getLeaderId();
             System.out.println("Leader identified: " + leaderId);
 
-            // Send asynchronous requests to Raft group
-            int numberOfRequests = 100; // The number of async messages to send
-            CompletableFuture<?>[] futures = new CompletableFuture[numberOfRequests];
-
+            // Send proper commands to the Raft group synchronously
+            int numberOfRequests = 100; // Number of operations to send
             for (int i = 0; i < numberOfRequests; i++) {
-                String messageContent = "Message #" + i;
-                Message message = Message.valueOf(messageContent);
+                // Alternate between Credit, Debit, and GetBalance commands
+                Message message;
+                if (i % 3 == 0) {
+                    // Credit example: "CREDIT:100.0"
+                    byte[] commandBytes = CommandUtils.encodeCreditCommand(100.0 + i);
+                    message = Message.valueOf(new String(commandBytes));
+                } else if (i % 3 == 1) {
+                    // Debit example: "DEBIT:50.0"
+                    byte[] commandBytes = CommandUtils.encodeDebitCommand(50.0 + i);
+                    message = Message.valueOf(new String(commandBytes));
+                } else {
+                    // GetBalance example: "GET_BALANCE"
+                    byte[] commandBytes = CommandUtils.encodeGetBalanceCommand();
+                    message = Message.valueOf(new String(commandBytes));
+                }
 
-                // Send asynchronously and handle the response
-                CompletableFuture<RaftClientReply> futureReply = client.async().send(message);
-                futures[i] = futureReply.thenAccept(reply -> {
+                try {
+                    RaftClientReply reply = client.io().send(message); // Blocking call (synchronous)
                     if (reply != null && reply.isSuccess()) {
-                        System.out.println("Command executed successfully: " + messageContent);
+                        System.out.println("Command executed successfully: " + message.getContent());
                     } else {
-                        System.err.println("Command failed for: " + messageContent);
+                        System.err.println("Command failed: " + message.getContent());
                     }
-                }).exceptionally(ex -> {
-                    System.err.println("Error occurred: " + ex.getMessage());
-                    return null;
-                });
+                } catch (Exception e) {
+                    System.err.println("Error occurred while sending command: " + e.getMessage());
+                }
             }
 
-            // Wait for all messages to finish
-            CompletableFuture.allOf(futures).join();
-            System.out.println("All messages sent and processed.");
+            System.out.println("All commands sent and processed successfully.");
 
         } catch (IOException e) {
-            // Handle exceptions related to resources
+            // Handle exceptions related to resource initialization
             System.err.println("Failed to initialize Raft client: " + e.getMessage());
             e.printStackTrace();
         } catch (Exception e) {
-            // Handle unexpected exceptions
+            // Handle other unexpected exceptions
             System.err.println("Unexpected error occurred: " + e.getMessage());
             e.printStackTrace();
         }
